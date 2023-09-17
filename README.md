@@ -18,10 +18,27 @@ Made for [Bongers jansen](https://www.bongers-jansen.nl)
 
 
 ## Contributions
-![avatar](https://images.weserv.nl/?url=avatars.githubusercontent.com/u/117635132?v=4&h=128&w=128&fit=cover&mask=circle&maxage=7d
-)
-Jop148
 
-![avatar](https://images.weserv.nl/?url=avatars.githubusercontent.com/u/68126277?v=4&h=128&w=128&fit=cover&mask=circle&maxage=7d
-)
-Fyxren
+<table>
+  <tr>
+    <td align="center">
+      <a href="#">
+        <img src="https://images.weserv.nl/?url=avatars.githubusercontent.com/u/117635132?v=4&h=128&w=128&fit=cover&mask=circle&maxage=7d" width="100px;" alt="" />
+        <br />
+        <sub>
+          <b>Jop</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://fyxren.com">
+        <img src="https://images.weserv.nl/?url=avatars.githubusercontent.com/u/68126277?v=4&h=128&w=128&fit=cover&mask=circle&maxage=7d" width="100px;" alt="" />
+        <br />
+        <sub>
+          <b>Fyxren</b>
+        </sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
