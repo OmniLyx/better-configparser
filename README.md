@@ -1,0 +1,4 @@
+# better-configparser
+
+## Idea
+ 
