@@ -154,7 +154,8 @@ class BetterParser:
     def write(self, 
               section:str, 
               option:str, 
-              value:str|int|float|bool
+              value:str|int|float|bool,
+              override:bool=True
               ):
         """
         ## Write
@@ -162,12 +163,16 @@ class BetterParser:
         ### Args:
             * Section: str = the section you are looking for
             * Option: str = the option you are looking for
-            * Value: str|int|flaot|bool = The value you want to write to it
+            * Value: str|int|float|bool = The value you want to write to it
+            * override: bool = defaults True this paramater will define if a function overrides the previous value or if it just returns without anything
         
         ### returns:
             * Bool = if it was successfully written
         """
-        if(self.hasOption(section, option)):
+        if(self.hasSection(section)):
+            if(self.hasOption(section, option)):
+                if(not override):
+                    return False
             if(isinstance(value, bool)):
                 value = "yes" if value else "no"
             self._conf[section][option] = value
