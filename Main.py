@@ -1,5 +1,5 @@
 from typing import Literal
-from configparser import ConfigParser as cn
+from configparser import ConfigParser as cn, SectionProxy as SP
 import os, platform
 
 class BetterParser:
@@ -34,6 +34,7 @@ class BetterParser:
             "Operating": platform.system(),
             "PyVersion": platform.version()
             }
+        self.SectionProxy = SectionProxy()
     
     def privacyCheck(self, DisplayType:Literal["raw", "keyList", "valueList", "dict"] = "dict") -> list|dict|str:
         """
@@ -73,7 +74,7 @@ class BetterParser:
         return a bool that will tell you if the section exists
         """
         
-        return section.lower() in self._conf.sections
+        return section.lower() in self._conf.sections()
     
     def hasOption(self, section:str, option:str) -> bool:
         """
@@ -87,7 +88,7 @@ class BetterParser:
             * True if it does exist
             * False if it doesn't (what did you expect)
         """
-        if(self.hasSection(section)):
+        if(self.hasOption(section)):
             return option.lower() in self._conf.options(section)
         else:
             return False
@@ -151,6 +152,39 @@ class BetterParser:
                 self._errorList.append(e)
                 return fallback
             
+    def createSection(self, section:str) -> bool:
+        if(self.hasSection(section.lower())):
+            return True
+        else:
+            try:
+                self._conf.add_section(section.lower())
+                return True
+            except Exception as e:
+                self._errorList.append(e)
+                return False
+            
+        return False
+
+
+    def deleteSection(self, section:str):
+        """
+        Will remove a section
+        """
+        try:
+            self._conf.remove_section(section.lower())
+            return True
+        except:
+            return False
+
+    def Deleteoption(self, section:str, option:str):
+        try:
+            self._conf.remove_option(section.lower(), option.lower())
+            return True
+        except:
+            return False
+
+
+            
     def write(self, 
               section:str, 
               option:str, 
@@ -169,12 +203,117 @@ class BetterParser:
         ### returns:
             * Bool = if it was successfully written
         """
-        if(self.hasSection(section)):
-            if(self.hasOption(section, option)):
-                if(not override):
-                    return False
-            if(isinstance(value, bool)):
-                value = "yes" if value else "no"
-            self._conf[section][option] = value
-            return self.confirm()
-        else: return False
+        section, option, = section.lower(), option.lower()
+
+        if(not self.hasSection(section)):
+            self.createSection(section)
+    
+        if(self.hasOption(section, option)):
+            if(not override):
+                return False
+        if(isinstance(value, bool)):
+            value = "yes" if value else "no"
+        self._conf[section][option] = value
+        return self.confirm()
+    
+    def __getitem__(self, item:str):
+        
+        if(self.hasSection(item.lower())):
+            self.SectionProxy._select(self._conf, item.lower(), self.confirm)
+        else:
+            return None
+        return self.SectionProxy
+    
+
+
+class SectionProxy:
+    def __init__(self) -> None:
+        pass
+
+    def _select(self, config:cn, section:str, confirmFunction):
+        self._config = config
+        self._section = config[section.lower()]
+        self._sectionStr = section.lower()
+        self._confirm = confirmFunction
+
+    def hasOption(self, option:str):
+        return option.lower() in self._section.keys()
+
+    def write(self,
+              option:str,
+              value:str|int|float|bool,
+              override:bool=True,
+              ) -> bool:
+        if(self.hasOption(option)):
+            if(not override):
+                return False
+        if(isinstance(value, bool)):
+            value = "yes" if value else "no"
+        self._section[option.lower()] = value
+        return self._confirm()
+    
+    def deleteSection(self):
+        """
+        Will make this SectionProxy broken and will most likely not work
+        """
+        try:
+            self._config.remove_section(self._sectionStr)
+            return True
+        except:
+            return False
+
+    def Deleteoption(self, option:str):
+        try:
+            self._config.remove_option(self._sectionStr, option.lower())
+            return True
+        except:
+            return False
+    
+    def get(self,
+            option:str, 
+            fallback:(
+                str|
+                int|
+                bool|
+                float|
+                None
+                )=None,
+
+            RType:
+            Literal["str", "int", "bool", "float"]="str") -> \
+                \
+                (
+                str|
+                int|
+                bool|
+                float|
+                None
+                ):
+        
+
+        section = self._sectionStr.lower()
+        option = option.lower()
+
+        if(not self.hasOption(option)):
+            return fallback
+        
+        if(RType == "str"):
+            try:
+                return self._config.get(section, option)
+            except Exception as e:
+                return fallback
+        if(RType == "bool"):
+            try:
+                return self._config.getboolean(section, option)
+            except:
+                return fallback
+        if(RType == "float"):
+            try:
+                return self._config.getfloat(section, option)
+            except:
+                return fallback
+        if(RType == "int"):
+            try:
+                return self._config.getint(section, option)
+            except Exception as e:
+                return fallback
