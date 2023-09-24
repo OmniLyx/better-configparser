@@ -34,7 +34,6 @@ class BetterParser:
             "Operating": platform.system(),
             "PyVersion": platform.version()
             }
-        self.SectionProxy = SectionProxy()
     
     def privacyCheck(self, DisplayType:Literal["raw", "keyList", "valueList", "dict"] = "dict") -> list|dict|str:
         """
@@ -176,7 +175,7 @@ class BetterParser:
         except:
             return False
 
-    def Deleteoption(self, section:str, option:str):
+    def deleteOption(self, section:str, option:str):
         try:
             self._conf.remove_option(section.lower(), option.lower())
             return True
@@ -218,11 +217,15 @@ class BetterParser:
     
     def __getitem__(self, item:str):
         
-        if(self.hasSection(item.lower())):
-            self.SectionProxy._select(self._conf, item.lower(), self.confirm)
-        else:
-            return None
-        return self.SectionProxy
+        SectionProx = SectionProxy()
+
+        if(not self.hasSection(item.lower())):
+            self.createSection(item.lower())
+            
+        SectionProx._select(self._conf, item.lower(), self.confirm)
+
+        
+        return SectionProx
     
 
 
@@ -243,6 +246,7 @@ class SectionProxy:
               option:str,
               value:str|int|float|bool,
               override:bool=True,
+              commit:bool=True
               ) -> bool:
         if(self.hasOption(option)):
             if(not override):
@@ -250,7 +254,10 @@ class SectionProxy:
         if(isinstance(value, bool)):
             value = "yes" if value else "no"
         self._section[option.lower()] = value
-        return self._confirm()
+        if(commit):
+            return self._confirm()
+        else:
+            return True
     
     def deleteSection(self):
         """
@@ -262,7 +269,7 @@ class SectionProxy:
         except:
             return False
 
-    def Deleteoption(self, option:str):
+    def deleteOption(self, option:str):
         try:
             self._config.remove_option(self._sectionStr, option.lower())
             return True
@@ -317,3 +324,113 @@ class SectionProxy:
                 return self._config.getint(section, option)
             except Exception as e:
                 return fallback
+            
+    def __getitem__(self, item:str):
+        OptionProx = OptionProxy()
+        
+        if(not self.hasOption(item.lower())):
+            self._config[self._sectionStr][item.lower()] = ""
+            self._confirm()
+        
+        OptionProx.FromSectionProxy(self._section, str(item), self._config, self._confirm)
+        
+        return OptionProx
+
+    def __len__(self):
+        return len(self._section.keys())
+    
+    def __str__(self) -> str:
+        return self._sectionStr
+    
+    def __iter__(self):
+        return iter([x for x in self._section.keys()])
+
+
+class OptionProxy:
+
+    def __init__(self) -> None:
+        pass
+
+    def FromSectionProxy(self, section:SP, name:str, config:cn, confirm):
+        self._option:str = name.lower()
+        self._section = section
+        self._confirm = confirm
+        self._config = config
+    
+    def exist(self) -> bool:
+        return self._option in self._section 
+
+    def get(self,
+            fallback:(
+                str|
+                int|
+                bool|
+                float|
+                None
+                )=None,
+
+            RType:
+            Literal["str", "int", "bool", "float"]="str") -> \
+                \
+                (
+                str|
+                int|
+                bool|
+                float|
+                None
+                ):
+        
+
+        option = self._option
+
+        if(not self.exist()):
+            return fallback
+        
+        if(RType == "str"):
+            try:
+                return self._section.get(option, fallback)
+            except Exception as e:
+                return fallback
+        if(RType == "bool"):
+            try:
+                return self._section.getboolean(option, fallback)
+            except:
+                return fallback
+        if(RType == "float"):
+            try:
+                return self._section.getfloat(option, fallback)
+            except:
+                return fallback
+        if(RType == "int"):
+            try:
+                return self._section.getint(option, fallback)
+            except Exception as e:
+                return fallback
+    
+    def write(self,
+              value:str|int|float|bool,
+              override:bool=True
+              ) -> bool:
+        
+        self._section[self._option]
+    
+    def delete(self) -> bool:
+        self._config.remove_option(self._section.name, self._option)
+        return self._confirm()
+
+    
+    def __set__(self, value:str|int|float|bool):
+        return self.write(value)
+
+    def __str__(self):
+        return self.get()
+    
+    def __bool__(self):
+        return self.get(RType="bool")
+    
+
+    def __int__(self):
+        return self.get(RType="int")
+    
+    def __float__(self):
+        return self.get(RType="float")
