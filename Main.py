@@ -3,7 +3,7 @@ from configparser import ConfigParser as cn, SectionProxy as SP
 import os, platform
 
 class BetterParser:
-    def __init__(self, file:str) -> None:
+    def __init__(self, file:str=None, diskSave:bool=False) -> None:
         """
         provided by OmniLyx
         # BetterParser
@@ -19,11 +19,15 @@ class BetterParser:
         """
         self._file:str = file
         self._conf:cn = cn()
-        if(os.path.exists(file)):
-            self._conf.read(file)
-        else:
-            with open(file, "w") as f:
-                f.write("")
+        
+        self._diskSave = diskSave
+
+        if(diskSave):
+            if(os.path.exists(file)):
+                self._conf.read(file)
+            else:
+                with open(file, "w") as f:
+                    f.write("")
             
         self._errorList:list = []
 
@@ -57,14 +61,14 @@ class BetterParser:
         # If you see this well now you know that we don't hide anything (except for this message)
 
     def confirm(self) -> bool:
-        
-        try:
-            with open(self._file, "w") as f:
-                self._conf.write(f)
-            return True
-        except Exception as e:
-            self._errorList.append(e)
-            return False
+        if(self._diskSave):
+            try:
+                with open(self._file, "w") as f:
+                    self._conf.write(f)
+                return True
+            except Exception as e:
+                self._errorList.append(e)
+                return False
         
     def hasSection(self, section:str) -> bool:
         """
@@ -87,10 +91,7 @@ class BetterParser:
             * True if it does exist
             * False if it doesn't (what did you expect)
         """
-        if(self.hasOption(section)):
-            return option.lower() in self._conf.options(section)
-        else:
-            return False
+        return option.lower() in self._conf.options(section)
 
     def get(self, 
             section:str, 
@@ -253,7 +254,7 @@ class SectionProxy:
                 return False
         if(isinstance(value, bool)):
             value = "yes" if value else "no"
-        self._section[option.lower()] = value
+        self._section[option.lower()] = f"{value}"
         if(commit):
             return self._confirm()
         else:
@@ -409,10 +410,11 @@ class OptionProxy:
     
     def write(self,
               value:str|int|float|bool,
-              override:bool=True
               ) -> bool:
         
-        self._section[self._option]
+        if(isinstance(value, bool)):
+            value = "yes" if value else "no"
+        self._section[self._option] = f"{value}"
     
     def delete(self) -> bool:
         self._config.remove_option(self._section.name, self._option)
@@ -421,6 +423,9 @@ class OptionProxy:
     
     def __set__(self, value:str|int|float|bool):
         return self.write(value)
+    
+    def __get__(self):
+        return self.get()
 
     def __str__(self):
         return self.get()
